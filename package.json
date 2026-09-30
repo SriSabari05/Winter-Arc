@@ -1,0 +1,27 @@
+{
+  "name": "winter-arc-app",
+  "version": "1.0.0",
+  "description": "Winter Arc - Ink & Signal: Open Source Habit, Financial & Journal Tracker for Android",
+  "main": "index.js",
+  "scripts": {
+    "sync": "npx cap sync android",
+    "build:apk": "cd android && .\\gradlew.bat assembleDebug",
+    "open:android": "npx cap open android"
+  },
+  "keywords": [
+    "winter-arc",
+    "habit-tracker",
+    "discipline",
+    "android",
+    "open-source",
+    "apk",
+    "capacitor"
+  ],
+  "author": "Winter Arc Community",
+  "license": "MIT",
+  "dependencies": {
+    "@capacitor/android": "^7.0.1",
+    "@capacitor/cli": "^7.0.1",
+    "@capacitor/core": "^7.0.1"
+  }
+}

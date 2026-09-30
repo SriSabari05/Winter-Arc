@@ -1,0 +1,29 @@
+# Node dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Android build outputs & caches
+android/.gradle/
+android/app/build/
+android/build/
+android/local.properties
+android/captures/
+android/.externalNativeBuild/
+android/.cxx/
+
+# Gradle generated files
+*.hprof
+.gradle/
+
+# IDE / OS files
+.idea/
+*.iml
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Keep release APKs if desired or ignore local temp files
+*.tmp
+*.log
