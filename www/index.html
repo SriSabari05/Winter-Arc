@@ -459,37 +459,64 @@ function tog(id,d){
   save();
 }
 
-/* Universal File Download Helper */
-function downloadFile(filename, data, mimeType){
-  try {
-    const blob = data instanceof Blob ? data : new Blob([data], {type: mimeType || 'application/octet-stream'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(() => {
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    }, 1500);
-    return true;
-  } catch(e) {
-    console.error("Download error:", e);
-    return false;
-  }
+/* ── File Save Helper ──────────────────────────────────────────
+   On Android (Capacitor): writes file via Filesystem plugin,
+   then triggers the native Share sheet so the user can save to
+   Downloads, Drive, email, etc.
+   On web: falls back to classic blob-URL download.
+────────────────────────────────────────────────────────────── */
+const isNative = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+
+async function blobToBase64(blob){
+  return new Promise((res, rej) => {
+    const fr = new FileReader();
+    fr.onload  = () => res(fr.result.split(',')[1]);
+    fr.onerror = rej;
+    fr.readAsDataURL(blob);
+  });
+}
+
+async function saveFileNative(filename, blob){
+  const { Filesystem, Share } = Capacitor.Plugins;
+  const b64 = await blobToBase64(blob);
+  const writeResult = await Filesystem.writeFile({
+    path: filename,
+    data: b64,
+    directory: 'CACHE',   // app-private, no extra permission needed
+    recursive: true
+  });
+  // Share sheet lets user pick: Downloads, Drive, email, etc.
+  await Share.share({
+    title: filename,
+    url: writeResult.uri,
+    dialogTitle: 'Save file'
+  });
+}
+
+async function saveFileWeb(filename, blob){
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 1500);
+}
+
+async function saveFile(filename, data, mimeType){
+  const blob = data instanceof Blob ? data : new Blob([data], {type: mimeType || 'application/octet-stream'});
+  if(isNative) await saveFileNative(filename, blob);
+  else         await saveFileWeb(filename, blob);
 }
 
 async function bk(){
   try{
     const jsonStr = JSON.stringify(S, null, 2);
     const fname = `WinterArc_backup_${today()}.json`;
-    const ok = downloadFile(fname, jsonStr, "application/json");
-    if(ok) toast("BACKUP DOWNLOADED");
-    else toast("BACKUP FAILED");
+    await saveFile(fname, jsonStr, 'application/json');
+    toast('BACKUP SAVED');
   }catch(e){
+    if(e && e.message && e.message.includes('cancel')) return; // user dismissed share
     console.error(e);
-    toast("BACKUP FAILED");
+    toast('BACKUP FAILED');
   }
 }
 
@@ -629,18 +656,19 @@ async function buildWb(){
 }
 
 async function exp(){
-  toast("BUILDING REPORT…");
+  toast('BUILDING REPORT…');
   try{
-    if(typeof ExcelJS=="undefined")return toast("EXCEL LIBRARY NOT LOADED");
-    const wb=await buildWb(),buf=await wb.xlsx.writeBuffer();
+    if(typeof ExcelJS=='undefined')return toast('EXCEL LIBRARY NOT LOADED');
+    const wb  = await buildWb();
+    const buf = await wb.xlsx.writeBuffer();
     const fname = `WinterArc_Report_${today()}.xlsx`;
-    const blob = new Blob([buf], {type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
-    const ok = downloadFile(fname, blob);
-    if(ok) toast("EXCEL REPORT SAVED");
-    else toast("EXPORT FAILED");
+    const blob  = new Blob([buf], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    await saveFile(fname, blob);
+    toast('EXCEL REPORT SAVED');
   }catch(e){
+    if(e && e.message && e.message.includes('cancel')) return; // user dismissed share
     console.error(e);
-    toast("EXPORT FAILED");
+    toast('EXPORT FAILED — ' + (e&&e.message||'unknown error'));
   }
 }
 
