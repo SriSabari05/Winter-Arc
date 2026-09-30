@@ -1,6 +1,6 @@
 {
   "appId": "com.winterarc.inksignal",
-  "appName": "Winter Arc",
+  "appName": "Arc",
   "webDir": "www",
   "bundledWebRuntime": false,
   "server": {
@@ -10,3 +10,4 @@
     "allowMixedContent": true
   }
 }
+
