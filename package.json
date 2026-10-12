@@ -1,6 +1,6 @@
 {
   "name": "winter-arc-app",
-  "version": "1.0.0",
+  "version": "1.0.5",
   "description": "Winter Arc - Ink & Signal: Open Source Habit, Financial & Journal Tracker for Android",
   "main": "index.js",
   "scripts": {
